@@ -16,6 +16,7 @@ public class GridItemGenerator : MonoBehaviour
 
     private void Start()
     {
+        MergeController.Instance.OnMergeComplete.AddListener(SpawnNewGridItems);
         SpawnNewGridItems();
     }
 
@@ -32,6 +33,10 @@ public class GridItemGenerator : MonoBehaviour
         {
             yield return new WaitForSeconds(spawnDelay);
             Generate();
+            foreach (var gridItem in gridItemsOnScene.GetAllElements())
+            {
+                CheckIfCanMoveBottom(gridItem);
+            }
         } while (SpawnPointController.Instance.GetActiveSpawnPoints().Count != 0);
 
         yield return null;
@@ -49,23 +54,32 @@ public class GridItemGenerator : MonoBehaviour
         }
     }
 
-    private void GenerateGridItem(SpawnPoint item)
+    private void GenerateGridItem(SpawnPoint spawnPoint)
     {
-        var newGridItem = Instantiate(gridItem, item.transform.position, Quaternion.identity);
+        var newGridItem = Instantiate(gridItem, spawnPoint.transform.position, Quaternion.identity);
         scaler = StartCoroutine(SpawnScaleC(newGridItem, newGridItem.transform.localScale.x));
         newGridItem.transform.localScale = new Vector3(0, 0, 0);
         newGridItem.transform.parent = transform;
-        newGridItem.InitGridItem(gridItemTypes.GetRandomItemType(), item.Ground);
+        newGridItem.InitGridItem(gridItemTypes.GetRandomItemType(), spawnPoint.Ground);
         gridItemsOnScene.AddToList(newGridItem);
 
-        StartCoroutine(MoveToBottomC(newGridItem));
+        //CheckIfCanMoveBottom(newGridItem);
+    }
+
+    private void CheckIfCanMoveBottom(GridItem gridItem)
+    {
+        var bottomPosition = SpawnPointController.Instance.GetBottomAvailableSpawnPoint(gridItem.Ground);
+        if (bottomPosition != null)
+        {
+            StartCoroutine(MoveToBottomC(gridItem, bottomPosition));
+        }
     }
 
     private IEnumerator SpawnScaleC(GridItem item, float target)
     {
         var scale = 0f;
         var scaleTimer = 0f;
-        var scaleTime = 0.5f;
+        var scaleTime = 1f;
         while (scaleTimer < scaleTime)
         {
             scale = EasingFunction.EaseOutElastic(0, target, scaleTimer / scaleTime);
@@ -77,16 +91,12 @@ public class GridItemGenerator : MonoBehaviour
         yield return null;
     }
 
-    private IEnumerator MoveToBottomC(GridItem item)
+    private IEnumerator MoveToBottomC(GridItem item, SpawnPoint bottomPosition)
     {
-        var bottomPosition = SpawnPointController.Instance.GetBottomAvailableSpawnPoint(item.Ground);
-        
-        if (bottomPosition != null)
-        {
             item.Ground = bottomPosition.Ground;
             Vector3 startPosition = item.transform.position;
             Vector3 targetPosition = bottomPosition.transform.position;
-            float moveDuration = 0.3f; // Adjust as needed
+            float moveDuration = 0.1f; // Adjust as needed
         
             float elapsedTime = 0f;
             while (elapsedTime < moveDuration)
@@ -97,7 +107,5 @@ public class GridItemGenerator : MonoBehaviour
             }
         
             item.transform.position = targetPosition;
-            
-        }
     }
 }

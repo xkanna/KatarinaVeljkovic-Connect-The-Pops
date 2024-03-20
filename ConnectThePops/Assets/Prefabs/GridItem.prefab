@@ -266,9 +266,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4315805756392106508}
   - component: {fileID: 4808820420600734227}
+  - component: {fileID: 8293494637353355862}
   m_Layer: 0
   m_Name: GridItem
-  m_TagString: Untagged
+  m_TagString: GridItem
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -304,3 +305,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   background: {fileID: 8499487507793175521}
   numberText: {fileID: 3080821765881064008}
+--- !u!65 &8293494637353355862
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8573377958110428953}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.8925246, y: 0.8885441, z: 1}
+  m_Center: {x: 0.007961094, y: -0.003980562, z: 0}

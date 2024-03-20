@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "GridItemsOnScene", fileName = "GridItemsOnScene", order = 0)]
@@ -40,5 +41,10 @@ public class GridItemsOnScene : ScriptableObject
     public List<GridItem> GetAllElements()
     {
         return gridItems;
+    }
+    
+    public GridItem GetLastElement()
+    {
+        return gridItems.Last();
     }
 }

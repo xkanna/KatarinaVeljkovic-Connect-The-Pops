@@ -153,23 +153,13 @@ public class SpawnPointController : MonoBehaviour
     
     public SpawnPoint GetBottomAvailableSpawnPoint(Vector3 ground)
     {
-        foreach (var item in SpawnPointGenerator.Instance.SpawnPoints)
+        foreach (var spawnPoint in SpawnPointGenerator.Instance.SpawnPoints)
         {
-            if (item.Ground.x == ground.x)
+            if (spawnPoint.Ground.x == ground.x && spawnPoint.Ground.y == ground.y - 1)
             {
-                if (item.Ground.y == 0 && IsAvailable(item.Ground))
+                if (IsAvailable(spawnPoint.Ground))
                 {
-                    return item;
-                }
-                else
-                {
-                    for (int i = 1; i < 4; i++)
-                    {
-                        if (item.Ground.y == i && IsAvailable(item.Ground))
-                        {
-                            return item;
-                        }
-                    }
+                    return spawnPoint;
                 }
             }
         }

@@ -10,6 +10,13 @@ public class GridItem : MonoBehaviour
     [SerializeField] private TextMeshPro numberText;
 
     private GridItemType myType;
+
+    public GridItemType Type
+    {
+        get => myType;
+        set => myType = value;
+    }
+
     private Vector3 groundPosition;
     private bool isMoving = false;
 
