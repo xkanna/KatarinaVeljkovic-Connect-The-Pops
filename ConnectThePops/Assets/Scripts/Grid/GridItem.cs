@@ -11,6 +11,13 @@ public class GridItem : MonoBehaviour
 
     private GridItemType myType;
     private Vector3 groundPosition;
+    private bool isMoving = false;
+
+    public bool IsMoving
+    {
+        get => isMoving;
+        set => isMoving = value;
+    }
 
     public Vector3 Ground
     {

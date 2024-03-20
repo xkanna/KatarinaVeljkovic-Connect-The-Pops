@@ -27,6 +27,7 @@ public class SpawnPointController : MonoBehaviour
         }
         return allSpawnPoints;
     }
+    
     public List<SpawnPoint> GetActiveSpawnPoints()
     {
         List<SpawnPoint> activeSpawnPoints = new List<SpawnPoint>();
@@ -149,6 +150,33 @@ public class SpawnPointController : MonoBehaviour
 
         return neighbors;
     }
+    
+    public SpawnPoint GetBottomAvailableSpawnPoint(Vector3 ground)
+    {
+        foreach (var item in SpawnPointGenerator.Instance.SpawnPoints)
+        {
+            if (item.Ground.x == ground.x)
+            {
+                if (item.Ground.y == 0 && IsAvailable(item.Ground))
+                {
+                    return item;
+                }
+                else
+                {
+                    for (int i = 1; i < 4; i++)
+                    {
+                        if (item.Ground.y == i && IsAvailable(item.Ground))
+                        {
+                            return item;
+                        }
+                    }
+                }
+            }
+        }
+    
+        return null;
+    }
+    
     public GridItem FindGridItemBySpawnPointGroundPosition(SpawnPoint spawnPoint)
     {
         foreach (var item in gridItemsOnScene.GetAllElements())
@@ -165,64 +193,5 @@ public class SpawnPointController : MonoBehaviour
     public void ClearAll()
     {
         gridItemsOnScene.Clear();
-    }
-    
-    public bool IsThereEmptySpawnPoint()
-    {
-        bool found = false;
-        var availableSpawnPoints = GetActiveSpawnPoints();
-        foreach (var item in availableSpawnPoints)
-        {
-            var mergeable = FindGridItemBySpawnPointGroundPosition(item);
-            if (mergeable == null)
-            {
-                FindNextUpperBubble(item);
-                found = true;
-            }
-        }
-        if (found) return true;
-        return false;
-    }
-
-    private void FindNextUpperBubble(SpawnPoint fromSpawnPoint)
-    {
-        bool foundButBusy = false;
-        SpawnPoint busySpawn = null;
-        foreach (var item in GetSpawnPointsInAColumnOfSpawnPoint(fromSpawnPoint))
-        {
-            var spawnPoint = FindGridItemBySpawnPointGroundPosition(item);
-            if (spawnPoint != null && item.ground.z > fromSpawnPoint.ground.z )
-            {
-
-                if (item.IsActive)
-                {
-                    var bubbleToReplace = spawnPoint;
-                    bubbleToReplace.Ground = fromSpawnPoint.ground;
-                    foundButBusy = false;
-                    break;
-
-                } else
-                {
-                    foundButBusy = true;
-                    busySpawn = item;
-                }
-                    
-            }
-        }
-        if (foundButBusy == true)
-        {
-            //GenerateGridItem(fromSpawnPoint);
-        }
-    }
-    
-    public List<SpawnPoint> GetSpawnPointsInAColumnOfSpawnPoint(SpawnPoint spawnPoint)
-    {
-        List<SpawnPoint> activeSpawnPoints = new List<SpawnPoint>();
-        foreach (var item in SpawnPointGenerator.Instance.SpawnPoints)
-        {
-            if (item.ground.x == spawnPoint.ground.x)
-                activeSpawnPoints.Add(item);
-        }
-        return activeSpawnPoints;
     }
 }

@@ -9,72 +9,95 @@ public class GridItemGenerator : MonoBehaviour
     [SerializeField] private GridItemsOnScene gridItemsOnScene;
     [SerializeField] private GridItem gridItem;
     [SerializeField] private GridItemTypes gridItemTypes;
-    private Coroutine _coroutine;
-    private Coroutine _scaler;
+    private Coroutine spawnGridItemsCoroutine;
+    private Coroutine scaler;
     private bool isFeverActive;
-    private float spawnDelay = 0.01f;
+    private float spawnDelay = 0.05f;
 
     private void Start()
-    { 
-        StartGenerate();
-    }
-
-    public void StartGenerate()
     {
-        if (_coroutine == null)
-            _coroutine = StartCoroutine(KeepGenerating());
+        SpawnNewGridItems();
     }
 
-    private IEnumerator KeepGenerating()
+    public void SpawnNewGridItems()
+    {
+        if (spawnGridItemsCoroutine == null)
+            spawnGridItemsCoroutine = StartCoroutine(StartGeneratingC());
+    }
+
+    private IEnumerator StartGeneratingC()
     {
         yield return new WaitForSeconds(spawnDelay);
         do
         {
             yield return new WaitForSeconds(spawnDelay);
             Generate();
-        } while (SpawnPointController.Instance.GetTopAvailableSpawnPoints().Count != 0);
-        
+        } while (SpawnPointController.Instance.GetActiveSpawnPoints().Count != 0);
+
         yield return null;
-        _coroutine = null;
-        spawnDelay = 0.07f;
+        spawnGridItemsCoroutine = null;
     }
 
-    public void Generate()
+    private void Generate()
     {
         var availableTopSpawnPoints = SpawnPointController.Instance.GetTopAvailableSpawnPoints();
-        Debug.LogError(availableTopSpawnPoints.Count);
         foreach (var item in availableTopSpawnPoints)
         {
             if (item.IsActive == false) continue;
-            GenerateBubble(item);
+            GenerateGridItem(item);
             break;
         }
     }
 
-    public void GenerateBubble(SpawnPoint item)
+    private void GenerateGridItem(SpawnPoint item)
     {
-        Debug.LogError("gen bubble");
-        var create = Instantiate(gridItem, item.transform.position, Quaternion.identity);
-        _scaler = StartCoroutine(SpawnScaler(create, create.transform.localScale.x));
-        create.transform.localScale = new Vector3(0, 0, 0);
-        create.transform.parent = transform;
-        create.InitGridItem(gridItemTypes.GetRandomItemType(), item.Ground);
-        gridItemsOnScene.AddToList(create);
+        var newGridItem = Instantiate(gridItem, item.transform.position, Quaternion.identity);
+        scaler = StartCoroutine(SpawnScaleC(newGridItem, newGridItem.transform.localScale.x));
+        newGridItem.transform.localScale = new Vector3(0, 0, 0);
+        newGridItem.transform.parent = transform;
+        newGridItem.InitGridItem(gridItemTypes.GetRandomItemType(), item.Ground);
+        gridItemsOnScene.AddToList(newGridItem);
+
+        StartCoroutine(MoveToBottomC(newGridItem));
     }
 
-    private IEnumerator SpawnScaler(GridItem item, float target)
+    private IEnumerator SpawnScaleC(GridItem item, float target)
     {
         var scale = 0f;
         var scaleTimer = 0f;
         var scaleTime = 0.5f;
         while (scaleTimer < scaleTime)
         {
-            scale = EasingFunction.EaseOutElastic(0, target, scaleTimer/scaleTime);
+            scale = EasingFunction.EaseOutElastic(0, target, scaleTimer / scaleTime);
             scaleTimer += Time.deltaTime;
             item.transform.localScale = new Vector3(scale, scale, scale);
             yield return null;
         }
         item.transform.localScale = new Vector3(target, target, target);
         yield return null;
+    }
+
+    private IEnumerator MoveToBottomC(GridItem item)
+    {
+        var bottomPosition = SpawnPointController.Instance.GetBottomAvailableSpawnPoint(item.Ground);
+        
+        if (bottomPosition != null)
+        {
+            item.Ground = bottomPosition.Ground;
+            Vector3 startPosition = item.transform.position;
+            Vector3 targetPosition = bottomPosition.transform.position;
+            float moveDuration = 0.3f; // Adjust as needed
+        
+            float elapsedTime = 0f;
+            while (elapsedTime < moveDuration)
+            {
+                item.transform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime / moveDuration);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+        
+            item.transform.position = targetPosition;
+            
+        }
     }
 }
