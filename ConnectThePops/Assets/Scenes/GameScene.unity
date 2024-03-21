@@ -793,6 +793,39 @@ MonoBehaviour:
   gridItemsOnScene: {fileID: 11400000, guid: 9e66a09da3fb0c14d98f653326381f06, type: 2}
   gridItem: {fileID: 4808820420600734227, guid: 626e770cb39320a4a882079ff2a9b7ca, type: 3}
   gridItemTypes: {fileID: 11400000, guid: 235eda96d272cd94da755c2c79cea5e3, type: 2}
+  animationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 1.7920067
+      outSlope: 1.7920067
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.13164558
+    - serializedVersion: 3
+      time: 0.44988605
+      value: 1
+      inSlope: -1.4846998
+      outSlope: -1.4846998
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.13417721
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1603757040
 GameObject:
   m_ObjectHideFlags: 0

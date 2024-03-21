@@ -3,12 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UIElements;
 
 public class GridItemGenerator : MonoBehaviour
 {
     [SerializeField] private GridItemsOnScene gridItemsOnScene;
     [SerializeField] private GridItem gridItem;
     [SerializeField] private GridItemTypes gridItemTypes;
+    [SerializeField] private AnimationCurve animationCurve;
     private Coroutine spawnGridItemsCoroutine;
     private Coroutine scaler;
     private bool isFeverActive;
@@ -96,7 +98,7 @@ public class GridItemGenerator : MonoBehaviour
             item.Ground = bottomPosition.Ground;
             Vector3 startPosition = item.transform.position;
             Vector3 targetPosition = bottomPosition.transform.position;
-            float moveDuration = 0.1f; // Adjust as needed
+            float moveDuration = 0.15f; 
         
             float elapsedTime = 0f;
             while (elapsedTime < moveDuration)
@@ -105,7 +107,18 @@ public class GridItemGenerator : MonoBehaviour
                 elapsedTime += Time.deltaTime;
                 yield return null;
             }
-        
             item.transform.position = targetPosition;
+            
+            float scaleTime = 0.4f;
+            float elapsedScaleTime = 0f;
+            while (elapsedScaleTime < scaleTime)
+            {
+                item.transform.localScale = new Vector3(1,animationCurve.Evaluate(elapsedScaleTime / scaleTime), 1);
+                elapsedScaleTime += Time.deltaTime;
+                yield return null;
+            }
+
+            item.transform.localScale = Vector3.one;
+            
     }
 }

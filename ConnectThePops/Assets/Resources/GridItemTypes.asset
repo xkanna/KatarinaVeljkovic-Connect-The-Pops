@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allowedNumbersToSpawnRandomly: 6
   allGridItemTypes:
-  - color: {r: 0.9019608, g: 0.39215687, b: 0.54901963, a: 1}
+  - color: {r: 0.90196085, g: 0.3921569, b: 0.54901963, a: 1}
     number: 2
-  - color: {r: 0.88235295, g: 0.33333334, b: 0.21568628, a: 1}
+  - color: {r: 0.882353, g: 0.33333334, b: 0.21568629, a: 1}
     number: 4
   - color: {r: 0.98039216, g: 0.7254902, b: 0.1764706, a: 1}
     number: 8
