@@ -3,13 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 public class PressController : MonoBehaviour
 {
-    public static PressController Instance;
-
     [SerializeField] private GridItemsToMerge gridItemsToMerge;
+    [SerializeField] private Camera camera;
+    private bool isPressed = false;
+    
+    public static PressController Instance;
+    public UnityEvent OnRelease { get; }  = new UnityEvent();
 
     private void Awake()
     {
@@ -19,29 +21,22 @@ public class PressController : MonoBehaviour
             Destroy(this);
     }
 
-    [SerializeField] private Camera camera;
-    private bool isPressed = false;
-    public UnityEvent OnRelease { get; }  = new UnityEvent();
-    internal bool IsPressed { get => isPressed; set => isPressed = value; }
-
     private void Update()
     {
-        if (IsPressed)
+        if (isPressed)
         {
             RaycastHit hit;
-            Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+            var ray = camera.ScreenPointToRay(Input.mousePosition);
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity))
             {
                 if (hit.collider.CompareTag("GridItem"))
                 {
-                    Transform objectHit = hit.transform;
-                    if (gridItemsToMerge.Count() > 1 && objectHit
-                        == gridItemsToMerge.GetBeforeLastElementForDemerge().transform)
+                    var objectHit = hit.transform;
+                    if (gridItemsToMerge.Count() > 1 && objectHit == gridItemsToMerge.GetBeforeLastElementForDemerge().transform)
                         MergeController.Instance.Split(gridItemsToMerge.GetLastElement());
                     else
                         MergeController.Instance.Merge(objectHit.GetComponent<GridItem>());
-                        
                 }
             }
         }
@@ -49,12 +44,12 @@ public class PressController : MonoBehaviour
 
     public void PressedDown()
     {
-        IsPressed = true;
+        isPressed = true;
     }
 
     public void PressedUp()
     {
-        IsPressed = false;
+        isPressed = false;
         OnRelease.Invoke();
     }
 }

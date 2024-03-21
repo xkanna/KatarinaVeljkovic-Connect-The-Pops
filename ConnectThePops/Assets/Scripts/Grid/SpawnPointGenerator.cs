@@ -4,6 +4,16 @@ using UnityEngine;
 
 public class SpawnPointGenerator : MonoBehaviour
 {
+    [SerializeField] private int mapSizeX = 5;
+    [SerializeField] private int mapSizeY = 5;
+    [SerializeField] private SpawnPoint spawnPointPrefab;
+    private SpawnPoint[,] spawnPoints;
+    private int[,] mapFilled;
+    
+    public SpawnPoint[,] SpawnPoints => spawnPoints;
+    public int MapSizeX => mapSizeX;
+    public int MapSizeY => mapSizeY;
+
     public static SpawnPointGenerator Instance;
         
     private void Awake()
@@ -13,22 +23,13 @@ public class SpawnPointGenerator : MonoBehaviour
         else
             Destroy(this);
     }
-    
-    [SerializeField] private int mapSizeX = 5;
-    [SerializeField] private int mapSizeY = 5;
-    [SerializeField] private SpawnPoint spawnPointPrefab;
-    private SpawnPoint[,] spawnPoints;
-    private int[,] mapFilled;
-    public SpawnPoint[,] SpawnPoints { get => spawnPoints; }
-    public int MapSizeX { get => mapSizeX; }
-    public int MapSizeY { get => mapSizeY; }
 
-    void Start()
+    private void Start()
     {
-        Generate();
+        GenerateSpawnPoints();
     }
 
-    private void Generate()
+    private void GenerateSpawnPoints()
     {
         mapFilled = new int[MapSizeX, MapSizeY];
         spawnPoints = new SpawnPoint[MapSizeX, MapSizeY];
@@ -38,34 +39,28 @@ public class SpawnPointGenerator : MonoBehaviour
         {
             AssignTileNeighbors(item);
         }
-        
     }
 
-    void GenerateStartingGrid()
+    private void GenerateStartingGrid()
     {
-        for (int x = 0; x < MapSizeX; x++)
+        for (var x = 0; x < MapSizeX; x++)
         {
-            for (int y = 0; y < MapSizeY; y++)
+            for (var y = 0; y < MapSizeY; y++)
             {
                 if (mapFilled[x, y] == 0)
                 {
-                    Vector3 tilePosition = new Vector3(x, y, 0);
-                    
-                    SpawnPoint newTile;
-
-                    newTile = Instantiate(spawnPointPrefab, tilePosition, Quaternion.identity);
-                    
+                    var tilePosition = new Vector3(x, y, 0);
+                    var newTile = Instantiate(spawnPointPrefab, tilePosition, Quaternion.identity);
                     newTile.transform.SetParent(transform, false);
                     newTile.Ground = tilePosition;
 
                     SpawnPoints[(int)tilePosition.x, (int)tilePosition.y] = newTile;
                 }
-                else { continue; }
             }
         }
     }
 
-    void AssignTileNeighbors(SpawnPoint SP)
+    private void AssignTileNeighbors(SpawnPoint SP)
     {
         if (SP.Ground.y + 1 < MapSizeY)
             SP.Neighbor_UP = SpawnPoints[(int)SP.Ground.x, (int)SP.Ground.y + 1];
@@ -78,7 +73,6 @@ public class SpawnPointGenerator : MonoBehaviour
 
         if (SP.Ground.x - 1 > -1)
             SP.Neighbor_LEFT = SpawnPoints[(int)SP.Ground.x - 1, (int)SP.Ground.y];
-
 
         if (SP.Ground.x - 1 > -1 && SP.Ground.y + 1 < MapSizeY)
             SP.Neighbor_UP_LEFT = SpawnPoints[(int)SP.Ground.x - 1, (int)SP.Ground.y + 1];

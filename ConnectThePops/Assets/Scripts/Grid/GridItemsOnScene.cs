@@ -7,7 +7,6 @@ using UnityEngine;
 public class GridItemsOnScene : ScriptableObject
 {
     private List<GridItem> gridItems = new List<GridItem>();
-    public Event OnChanged { get; }
 
     private void OnEnable()
     {
@@ -18,14 +17,12 @@ public class GridItemsOnScene : ScriptableObject
     {
         if (gridItems.Contains(gridItem) == false)
             gridItems.Add(gridItem);
-        //OnChanged.Invoke();
     }
 
     public void RemoveFromList(GridItem gridItem)
     {
         if (gridItems.Contains(gridItem))
             gridItems.Remove(gridItem);
-        //OnChanged.Invoke();
     }
 
     public void Clear()
@@ -33,18 +30,8 @@ public class GridItemsOnScene : ScriptableObject
         gridItems.Clear();
     }
 
-    public int Count()
-    {
-        return gridItems.Count;
-    }
-
     public List<GridItem> GetAllElements()
     {
         return gridItems;
-    }
-    
-    public GridItem GetLastElement()
-    {
-        return gridItems.Last();
     }
 }

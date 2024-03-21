@@ -12,20 +12,12 @@ public class GridItem : MonoBehaviour
     [SerializeField] private GameObject frame;
 
     private GridItemType myType;
+    private Vector3 groundPosition;
 
     public GridItemType Type
     {
         get => myType;
         set => myType = value;
-    }
-
-    private Vector3 groundPosition;
-    private bool isMoving = false;
-
-    public bool IsMoving
-    {
-        get => isMoving;
-        set => isMoving = value;
     }
 
     public Vector3 Ground

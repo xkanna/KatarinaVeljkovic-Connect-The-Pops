@@ -8,6 +8,16 @@ using UnityEngine.Serialization;
 
 public class MergeController : MonoBehaviour
 {
+    [SerializeField] private GridItemsOnScene gridItemsOnScene;
+    [SerializeField] private GridItemsToMerge gridItemsToMerge;
+    [SerializeField] private MergeResult mergeResult;
+    [SerializeField] private int minimumMergeCount = 2;
+    [SerializeField] private AnimationCurve animationCurveBounce;
+    [SerializeField] private float scaleWhenSelected = 1.15f;
+    private GridItemType gridItemToMerge = null;
+    private LineRenderer lineRenderer;
+    private int numberOfLines;
+    
     public static MergeController Instance;
         
     private void Awake()
@@ -17,26 +27,13 @@ public class MergeController : MonoBehaviour
         else
             Destroy(this);
     }
-
-    [SerializeField] private GridItemsOnScene gridItemsOnScene;
-    [SerializeField] private GridItemsToMerge gridItemsToMerge;
-    [SerializeField] private MergeResult mergeResult;
-    [SerializeField] private int minimumMergeCount = 2;
-    [SerializeField] private AnimationCurve animationCurveBounce;
-    private GridItemType gridItemToMerge = null;
-    private LineRenderer lineRenderer;
-    private int pointNumber;
-
-    public UnityEvent OnMergeFail { get; } = new UnityEvent();
     public UnityEvent OnMergeComplete { get; } = new UnityEvent();
-    public UnityEvent<GridItem> OnMerge { get; }  = new UnityEvent<GridItem>();
-    public UnityEvent OnDemerge { get; } = new UnityEvent();
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
         ResetLines();
-        PressController.Instance.OnRelease.AddListener(ProceedMerge);
+        PressController.Instance.OnRelease.AddListener(TryToFinishMerge);
     }
 
     public void Merge(GridItem gridItem)
@@ -50,42 +47,16 @@ public class MergeController : MonoBehaviour
         if (gridItem.Type == gridItemToMerge)
         {
             if (gridItemsToMerge.Contains(gridItem)) return;
+            
             gridItemsToMerge.AddToList(gridItem);
-
-            gridItem.transform.localScale *= 1.15f;
+            gridItem.transform.localScale *= scaleWhenSelected;
             SetUpNewLine(gridItem);
             
-            OnMerge.Invoke(gridItem);
             CheckMergeResult();
         }
     }
-
-    private void SetUpNewLine(GridItem gridItem)
-    {
-        lineRenderer.startColor = gridItem.Type.color;
-        lineRenderer.endColor = gridItem.Type.color;
-        lineRenderer.positionCount++;
-        lineRenderer.SetPosition(pointNumber, gridItem.transform.position);
-        pointNumber++;
-    }
-
-    private void ResetLines()
-    {
-        lineRenderer.positionCount = 0;
-        pointNumber = 0;
-    }
-
-    public void Split(GridItem gridItem)
-    {
-        lineRenderer.positionCount--;
-        pointNumber--;
-        gridItem.transform.localScale /= 1.15f;
-        gridItemsToMerge.RemoveFromList(gridItem);
-        CheckMergeResult();
-        OnDemerge.Invoke();
-    }
-
-    private void ProceedMerge()
+    
+    private void TryToFinishMerge()
     {
         if (gridItemsToMerge.Count() < minimumMergeCount)
         {
@@ -94,23 +65,56 @@ public class MergeController : MonoBehaviour
         }
         FinishMerge();
     }
+    
+    private void FinishMerge()
+    {
+        gridItemToMerge = null;
+        ResetLines();
+        mergeResult.gameObject.SetActive(false);
+        StartCoroutine(MoveAllItemsInChainToLastItemC());
+    }
+    
+    public void Split(GridItem gridItem)
+    {
+        lineRenderer.positionCount--;
+        numberOfLines--;
+        gridItem.transform.localScale /= scaleWhenSelected;
+        gridItemsToMerge.RemoveFromList(gridItem);
+        CheckMergeResult();
+    }
 
+    private void SetUpNewLine(GridItem gridItem)
+    {
+        lineRenderer.startColor = gridItem.Type.color;
+        lineRenderer.endColor = gridItem.Type.color;
+        lineRenderer.positionCount++;
+        lineRenderer.SetPosition(numberOfLines, gridItem.transform.position);
+        numberOfLines++;
+    }
+
+    private void ResetLines()
+    {
+        lineRenderer.positionCount = 0;
+        numberOfLines = 0;
+    }
+    
     private int CheckMergeResult()
     {
         var numberOfSameGridItems = gridItemsToMerge.Count() / 2;
         var numberToSum = gridItemsToMerge.GetLastElement().Type.number;
-        int sum = 0;
+        
+        var calculatedMergeResult = 0;
         for (int i = 0; i < numberOfSameGridItems; i++)
         {
-            sum += numberToSum * 2;
+            calculatedMergeResult += numberToSum * 2;
         }
 
-        if (sum == 0) sum = numberToSum;
-        sum = RoundToNearestPowerOfTwo(sum);
+        if (calculatedMergeResult == 0) calculatedMergeResult = numberToSum;
+        calculatedMergeResult = RoundToNearestPowerOfTwo(calculatedMergeResult);
 
         mergeResult.gameObject.SetActive(true);
-        mergeResult.UpdateMergeResult(sum);
-        return sum;
+        mergeResult.UpdateMergeResult(calculatedMergeResult);
+        return calculatedMergeResult;
     }
 
     private int RoundToNearestPowerOfTwo(int number)
@@ -120,39 +124,31 @@ public class MergeController : MonoBehaviour
             return number;
         }
 
-        int powerOfTwo = 1;
+        var powerOfTwo = 1;
         while (powerOfTwo < number)
         {
             powerOfTwo *= 2;
         }
 
-        int lowerPowerOfTwo = powerOfTwo / 2;
+        var lowerPowerOfTwo = powerOfTwo / 2;
         return (number - lowerPowerOfTwo <= powerOfTwo - number) ? lowerPowerOfTwo : powerOfTwo;
     }
 
-    private void FinishMerge()
-    {
-        gridItemToMerge = null;
-        ResetLines();
-        mergeResult.gameObject.SetActive(false);
-        StartCoroutine(MoveAllItemsToLastItemC());
-    }
-
-    private IEnumerator MoveAllItemsToLastItemC()
+    private IEnumerator MoveAllItemsInChainToLastItemC()
     {
         var allGridItemsToMerge = new List<GridItem>(gridItemsToMerge.GetAllElements());
         allGridItemsToMerge.Remove(allGridItemsToMerge.Last());
         
-        GridItem lastItem = gridItemsToMerge.GetLastElement();
-        Vector3 targetPos = lastItem.transform.position;
+        var lastItem = gridItemsToMerge.GetLastElement();
+        var targetPos = lastItem.transform.position;
 
-        List<Vector3> startPositions = new List<Vector3>();
+        var startPositions = new List<Vector3>();
         foreach (var gridItem in allGridItemsToMerge)
         {
             startPositions.Add(gridItem.transform.position);
         }
 
-        float elapsedTime = 0f;
+        var elapsedTime = 0f;
         var duration = 0.2f;
 
         while (elapsedTime < duration)
@@ -166,13 +162,21 @@ public class MergeController : MonoBehaviour
             yield return null;
         }
 
+        UpdateLastElementInChain();
+        RemoveElementsFromChain(allGridItemsToMerge);
+    }
+
+    private void UpdateLastElementInChain()
+    {
         var lastElement = gridItemsToMerge.GetLastElement();
         lastElement.UpdateGridItem(CheckMergeResult());
         StartCoroutine(BounceItemC(lastElement));
-        
+    }
+
+    private void RemoveElementsFromChain(List<GridItem> allGridItemsToMerge)
+    {
         foreach (var gridItem in allGridItemsToMerge)
         {
-            gridItem.transform.position = targetPos;
             gridItemsOnScene.RemoveFromList(gridItem);
             Destroy(gridItem.gameObject);
         }
@@ -180,13 +184,12 @@ public class MergeController : MonoBehaviour
         gridItemsToMerge.Clear();
         OnMergeComplete.Invoke();
         mergeResult.gameObject.SetActive(false);
-        
     }
 
     private IEnumerator BounceItemC(GridItem item)
     {
-        float scaleTime = 0.4f;
-        float elapsedScaleTime = 0f;
+        var scaleTime = 0.4f;
+        var elapsedScaleTime = 0f;
         while (elapsedScaleTime < scaleTime)
         {
             var bounce = animationCurveBounce.Evaluate(elapsedScaleTime / scaleTime);
@@ -198,15 +201,14 @@ public class MergeController : MonoBehaviour
         item.transform.localScale = Vector3.one;
     }
 
-    public void MergeFail()
+    private void MergeFail()
     {
         foreach (var gridItem in gridItemsToMerge.GetAllElements())
         {
-            gridItem.transform.localScale /= 1.15f;
+            gridItem.transform.localScale /= scaleWhenSelected;
         }
         
         gridItemToMerge = null;
-        OnMergeFail.Invoke();
 
         gridItemsToMerge.Clear();
         ResetLines();
@@ -214,6 +216,6 @@ public class MergeController : MonoBehaviour
 
     private void OnDestroy()
     {
-        PressController.Instance.OnRelease.RemoveListener(ProceedMerge);
+        PressController.Instance.OnRelease.RemoveListener(TryToFinishMerge);
     }
 }

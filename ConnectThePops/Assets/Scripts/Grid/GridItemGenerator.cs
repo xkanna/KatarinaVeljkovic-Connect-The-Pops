@@ -1,9 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UIElements;
 
 public class GridItemGenerator : MonoBehaviour
 {
@@ -11,10 +8,8 @@ public class GridItemGenerator : MonoBehaviour
     [SerializeField] private GridItem gridItem;
     [SerializeField] private GridItemTypes gridItemTypes;
     [SerializeField] private AnimationCurve animationCurve;
+    [SerializeField] private float spawnDelay = 0.05f;
     private Coroutine spawnGridItemsCoroutine;
-    private Coroutine scaler;
-    private bool isFeverActive;
-    private float spawnDelay = 0.05f;
 
     private void Start()
     {
@@ -22,32 +17,35 @@ public class GridItemGenerator : MonoBehaviour
         SpawnNewGridItems();
     }
 
-    public void SpawnNewGridItems()
+    private void SpawnNewGridItems()
     {
         if (spawnGridItemsCoroutine == null)
-            spawnGridItemsCoroutine = StartCoroutine(StartGeneratingC());
+            spawnGridItemsCoroutine = StartCoroutine(StartGeneratingGridItemsC());
     }
 
-    private IEnumerator StartGeneratingC()
+    private IEnumerator StartGeneratingGridItemsC()
     {
         yield return new WaitForSeconds(spawnDelay);
+        
         do
         {
             yield return new WaitForSeconds(spawnDelay);
-            Generate();
-            foreach (var gridItem in gridItemsOnScene.GetAllElements())
+            GenerateGridItems();
+            foreach (var gridItemOnScene in gridItemsOnScene.GetAllElements())
             {
-                CheckIfCanMoveBottom(gridItem);
+                CheckIfCanMoveBottom(gridItemOnScene);
             }
-        } while (SpawnPointController.Instance.GetActiveSpawnPoints().Count != 0);
+        } 
+        while (SpawnPointController.Instance.GetActiveSpawnPoints().Count != 0);
 
         yield return null;
         spawnGridItemsCoroutine = null;
     }
 
-    private void Generate()
+    private void GenerateGridItems()
     {
         var availableTopSpawnPoints = SpawnPointController.Instance.GetTopAvailableSpawnPoints();
+        
         foreach (var item in availableTopSpawnPoints)
         {
             if (item.IsActive == false) continue;
@@ -59,7 +57,7 @@ public class GridItemGenerator : MonoBehaviour
     private void GenerateGridItem(SpawnPoint spawnPoint)
     {
         var newGridItem = Instantiate(gridItem, spawnPoint.transform.position, Quaternion.identity);
-        scaler = StartCoroutine(SpawnScaleC(newGridItem, newGridItem.transform.localScale.x));
+        StartCoroutine(SpawnScaleC(newGridItem, newGridItem.transform.localScale.x));
         newGridItem.transform.localScale = new Vector3(0, 0, 0);
         newGridItem.transform.parent = transform;
         newGridItem.InitGridItem(gridItemTypes.GetRandomItemType(), spawnPoint.Ground);
@@ -93,30 +91,30 @@ public class GridItemGenerator : MonoBehaviour
 
     private IEnumerator MoveToBottomC(GridItem item, SpawnPoint bottomPosition)
     {
-            item.Ground = bottomPosition.Ground;
-            Vector3 startPosition = item.transform.position;
-            Vector3 targetPosition = bottomPosition.transform.position;
-            float moveDuration = 0.15f; 
+        //Moving to desired position
+        item.Ground = bottomPosition.Ground;
+        var startPosition = item.transform.position;
+        var targetPosition = bottomPosition.transform.position;
+        var moveDuration = 0.15f; 
+    
+        var elapsedTime = 0f;
+        while (elapsedTime < moveDuration)
+        {
+            item.transform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime / moveDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        item.transform.position = targetPosition;
         
-            float elapsedTime = 0f;
-            while (elapsedTime < moveDuration)
-            {
-                item.transform.position = Vector3.Lerp(startPosition, targetPosition, elapsedTime / moveDuration);
-                elapsedTime += Time.deltaTime;
-                yield return null;
-            }
-            item.transform.position = targetPosition;
-            
-            float scaleTime = 0.4f;
-            float elapsedScaleTime = 0f;
-            while (elapsedScaleTime < scaleTime)
-            {
-                item.transform.localScale = new Vector3(1,animationCurve.Evaluate(elapsedScaleTime / scaleTime), 1);
-                elapsedScaleTime += Time.deltaTime;
-                yield return null;
-            }
-
-            item.transform.localScale = Vector3.one;
-            
+        //Small bounce on the end of moving
+        var scaleTime = 0.4f;
+        var elapsedScaleTime = 0f;
+        while (elapsedScaleTime < scaleTime)
+        {
+            item.transform.localScale = new Vector3(1,animationCurve.Evaluate(elapsedScaleTime / scaleTime), 1);
+            elapsedScaleTime += Time.deltaTime;
+            yield return null;
+        }
+        item.transform.localScale = Vector3.one;
     }
 }
