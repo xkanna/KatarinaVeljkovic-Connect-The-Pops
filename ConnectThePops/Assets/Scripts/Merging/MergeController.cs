@@ -23,7 +23,8 @@ public class MergeController : MonoBehaviour
 
     [SerializeField] private int minimumMergeCount = 2;
     private GridItemType gridItemToMerge = null;
-    private float pitch = 1f;
+    private LineRenderer lineRenderer;
+    private int pointNumber;
 
     public UnityEvent OnMergeFail { get; } = new UnityEvent();
     public UnityEvent OnMergeComplete { get; } = new UnityEvent();
@@ -32,6 +33,8 @@ public class MergeController : MonoBehaviour
 
     private void Start()
     {
+        lineRenderer = GetComponent<LineRenderer>();
+        ResetLines();
         PressController.Instance.OnRelease.AddListener(ProceedMerge);
     }
 
@@ -48,14 +51,33 @@ public class MergeController : MonoBehaviour
             if (gridItemsToMerge.Contains(gridItem)) return;
             gridItemsToMerge.AddToList(gridItem);
 
-            gridItem.transform.localScale *= 1.2f;
+            gridItem.transform.localScale *= 1.15f;
+            SetUpNewLine(gridItem);
+            
             OnMerge.Invoke(gridItem);
         }
     }
 
+    private void SetUpNewLine(GridItem gridItem)
+    {
+        lineRenderer.startColor = gridItem.Type.color;
+        lineRenderer.endColor = gridItem.Type.color;
+        lineRenderer.positionCount++;
+        lineRenderer.SetPosition(pointNumber, gridItem.transform.position);
+        pointNumber++;
+    }
+
+    private void ResetLines()
+    {
+        lineRenderer.positionCount = 0;
+        pointNumber = 0;
+    }
+
     public void Demerge(GridItem gridItem)
     {
-        gridItem.transform.localScale /= 1.2f;
+        lineRenderer.positionCount--;
+        pointNumber--;
+        gridItem.transform.localScale /= 1.15f;
         gridItemsToMerge.RemoveFromList(gridItem);
         OnDemerge.Invoke();
     }
@@ -82,6 +104,7 @@ public class MergeController : MonoBehaviour
         }
         gridItemsToMerge.Clear();
         OnMergeComplete.Invoke();
+        ResetLines();
     }
 
     public void MergeFail()
@@ -95,6 +118,7 @@ public class MergeController : MonoBehaviour
         OnMergeFail.Invoke();
 
         gridItemsToMerge.Clear();
+        ResetLines();
     }
 
     private void OnDestroy()
