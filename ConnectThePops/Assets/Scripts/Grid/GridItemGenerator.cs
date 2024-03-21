@@ -64,8 +64,6 @@ public class GridItemGenerator : MonoBehaviour
         newGridItem.transform.parent = transform;
         newGridItem.InitGridItem(gridItemTypes.GetRandomItemType(), spawnPoint.Ground);
         gridItemsOnScene.AddToList(newGridItem);
-
-        //CheckIfCanMoveBottom(newGridItem);
     }
 
     private void CheckIfCanMoveBottom(GridItem gridItem)
@@ -81,12 +79,12 @@ public class GridItemGenerator : MonoBehaviour
     {
         var scale = 0f;
         var scaleTimer = 0f;
-        var scaleTime = 1f;
+        var scaleTime = 0.3f;
         while (scaleTimer < scaleTime)
         {
-            scale = EasingFunction.EaseOutElastic(0, target, scaleTimer / scaleTime);
+            //scale = EasingFunction.EaseOutElastic(0, target, scaleTimer / scaleTime);
             scaleTimer += Time.deltaTime;
-            item.transform.localScale = new Vector3(scale, scale, scale);
+            item.transform.localScale = Vector3.Lerp(gridItem.transform.position, Vector3.one, scaleTimer / scaleTime);
             yield return null;
         }
         item.transform.localScale = new Vector3(target, target, target);

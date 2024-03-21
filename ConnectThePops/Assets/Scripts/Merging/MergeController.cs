@@ -20,8 +20,9 @@ public class MergeController : MonoBehaviour
 
     [SerializeField] private GridItemsOnScene gridItemsOnScene;
     [SerializeField] private GridItemsToMerge gridItemsToMerge;
-
+    [SerializeField] private MergeResult mergeResult;
     [SerializeField] private int minimumMergeCount = 2;
+    [SerializeField] private AnimationCurve animationCurveBounce;
     private GridItemType gridItemToMerge = null;
     private LineRenderer lineRenderer;
     private int pointNumber;
@@ -55,6 +56,7 @@ public class MergeController : MonoBehaviour
             SetUpNewLine(gridItem);
             
             OnMerge.Invoke(gridItem);
+            CheckMergeResult();
         }
     }
 
@@ -73,45 +75,134 @@ public class MergeController : MonoBehaviour
         pointNumber = 0;
     }
 
-    public void Demerge(GridItem gridItem)
+    public void Split(GridItem gridItem)
     {
         lineRenderer.positionCount--;
         pointNumber--;
         gridItem.transform.localScale /= 1.15f;
         gridItemsToMerge.RemoveFromList(gridItem);
+        CheckMergeResult();
         OnDemerge.Invoke();
     }
 
-    public void ProceedMerge()
+    private void ProceedMerge()
     {
         if (gridItemsToMerge.Count() < minimumMergeCount)
         {
             MergeFail();
             return;
         }
-        
         FinishMerge();
+    }
+
+    private int CheckMergeResult()
+    {
+        var numberOfSameGridItems = gridItemsToMerge.Count() / 2;
+        var numberToSum = gridItemsToMerge.GetLastElement().Type.number;
+        int sum = 0;
+        for (int i = 0; i < numberOfSameGridItems; i++)
+        {
+            sum += numberToSum * 2;
+        }
+
+        if (sum == 0) sum = numberToSum;
+        sum = RoundToNearestPowerOfTwo(sum);
+
+        mergeResult.gameObject.SetActive(true);
+        mergeResult.UpdateMergeResult(sum);
+        return sum;
+    }
+
+    private int RoundToNearestPowerOfTwo(int number)
+    {
+        if ((number & (number - 1)) == 0 && number != 0)
+        {
+            return number;
+        }
+
+        int powerOfTwo = 1;
+        while (powerOfTwo < number)
+        {
+            powerOfTwo *= 2;
+        }
+
+        int lowerPowerOfTwo = powerOfTwo / 2;
+        return (number - lowerPowerOfTwo <= powerOfTwo - number) ? lowerPowerOfTwo : powerOfTwo;
     }
 
     private void FinishMerge()
     {
         gridItemToMerge = null;
-        foreach (var gridItem in gridItemsToMerge.GetAllElements())
+        ResetLines();
+        mergeResult.gameObject.SetActive(false);
+        StartCoroutine(MoveAllItemsToLastItemC());
+    }
+
+    private IEnumerator MoveAllItemsToLastItemC()
+    {
+        var allGridItemsToMerge = new List<GridItem>(gridItemsToMerge.GetAllElements());
+        allGridItemsToMerge.Remove(allGridItemsToMerge.Last());
+        
+        GridItem lastItem = gridItemsToMerge.GetLastElement();
+        Vector3 targetPos = lastItem.transform.position;
+
+        List<Vector3> startPositions = new List<Vector3>();
+        foreach (var gridItem in allGridItemsToMerge)
         {
-            gridItem.transform.localScale /= 1.2f;
+            startPositions.Add(gridItem.transform.position);
+        }
+
+        float elapsedTime = 0f;
+        var duration = 0.2f;
+
+        while (elapsedTime < duration)
+        {
+            for (int i = 0; i < allGridItemsToMerge.Count(); i++)
+            {
+                allGridItemsToMerge[i].transform.position = Vector3.Lerp(startPositions[i], targetPos, elapsedTime / duration);
+            }
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        var lastElement = gridItemsToMerge.GetLastElement();
+        lastElement.UpdateGridItem(CheckMergeResult());
+        StartCoroutine(BounceItemC(lastElement));
+        
+        foreach (var gridItem in allGridItemsToMerge)
+        {
+            gridItem.transform.position = targetPos;
             gridItemsOnScene.RemoveFromList(gridItem);
             Destroy(gridItem.gameObject);
         }
+        
         gridItemsToMerge.Clear();
         OnMergeComplete.Invoke();
-        ResetLines();
+        mergeResult.gameObject.SetActive(false);
+        
+    }
+
+    private IEnumerator BounceItemC(GridItem item)
+    {
+        float scaleTime = 0.4f;
+        float elapsedScaleTime = 0f;
+        while (elapsedScaleTime < scaleTime)
+        {
+            var bounce = animationCurveBounce.Evaluate(elapsedScaleTime / scaleTime);
+            item.transform.localScale = new Vector3(bounce,bounce, 1);
+            elapsedScaleTime += Time.deltaTime;
+            yield return null;
+        }
+
+        item.transform.localScale = Vector3.one;
     }
 
     public void MergeFail()
     {
         foreach (var gridItem in gridItemsToMerge.GetAllElements())
         {
-            gridItem.transform.localScale /= 2;
+            gridItem.transform.localScale /= 1.15f;
         }
         
         gridItemToMerge = null;

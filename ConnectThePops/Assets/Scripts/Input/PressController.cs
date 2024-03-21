@@ -38,7 +38,7 @@ public class PressController : MonoBehaviour
                     Transform objectHit = hit.transform;
                     if (gridItemsToMerge.Count() > 1 && objectHit
                         == gridItemsToMerge.GetBeforeLastElementForDemerge().transform)
-                        MergeController.Instance.Demerge(gridItemsToMerge.GetLastElement());
+                        MergeController.Instance.Split(gridItemsToMerge.GetLastElement());
                     else
                         MergeController.Instance.Merge(objectHit.GetComponent<GridItem>());
                         
